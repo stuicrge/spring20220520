@@ -17,6 +17,21 @@
           <a class="nav-link ${current == 'insert' ? 'active' : '' }" href="${insertUrl }">글쓰기</a>
         </li>
       </ul>
+      
+         <form action="${listUrl }" class="d-flex">
+      	<!-- select.form-select>option*3 -->
+      	<select name="type" id="" class="form-select">
+      		<option value="all" ${param.type != 'title' && param.type != 'body' ? 'selected' : '' }>전체</option>
+      		<option value="title" ${param.type == 'title' ? 'selected' : '' }>제목</option>
+      		<option value="body" ${param.type == 'body' ? 'selected' : ''}>본문</option>
+      	</select>
+      	
+      	
+      	<input type="search" class="form-control me-2" name="keyword"/>
+      	<button class="btn btn-outline-success"><i class="fa-solid fa-magnifying-glass"></i></button>
+      </form>
+      
+      
     </div>
   </div>
 </nav>
