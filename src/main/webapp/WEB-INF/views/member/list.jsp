@@ -31,7 +31,14 @@
 		<tbody>
 			<c:forEach items="${memberList }" var="member">
 				<tr>
-					<td>${member.id }</td>
+					<td>
+						<c:url value="/member/get" var="getMemberUrl">
+							<c:param name="id" value="${member.id }"></c:param>
+						</c:url>
+					<a href="${getMemberUrl }">
+						${member.id }
+					</a>
+					</td>
 					<td>${member.password }</td>
 					<td>${member.email }</td>
 					<td>${member.nickName }</td>

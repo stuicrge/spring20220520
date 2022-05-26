@@ -22,4 +22,6 @@ public interface Membermapper {
 
 	int deleteMemberById(String id);
 
+	int updateMember(MemberDto dto);
+
 }
