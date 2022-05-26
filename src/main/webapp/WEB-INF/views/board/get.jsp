@@ -17,7 +17,7 @@
 <script
 	src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
 	referrerpolicy="no-referrer"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 <script>
 	$(document).ready(function() {
 		$("#edit-button1").click(function() {
@@ -39,33 +39,180 @@
 			}
 			
 		});
+		// 페이지 로딩 후 reply list 가져오는 ajax 요청
+		const listReply = function(){
+			
+			const data = {boardId : ${board.id}};
+			$.ajax({
+				url : "${appRoot}/reply/list",
+				type : "get",
+				data : data,
+				success : function(list){
+					console.log(list);
+					
+					const replyListElement = $("#replyList1");
+					replyListElement.empty();
+					
+					$("#numOfReply1").text(list.length);
+					for(let i = 0; i < list.length; i++){
+						const replyElement = $("<li class='list-group-item' />");
+						replyElement.html(`
+					
+								<div id="replyDisplayContainer\${list[i].id }">
+									<div class="fw-bold">
+										<i class="fa-solid fa-comment"></i> 
+										\${list[i].prettyInserted}
+									 	<span class="reply-edit-toggle-button badge bg-info text-dark" 
+									 		id="replyEditToggleButton\${list[i].id }" 
+									 		data-reply-id="\${list[i].id }" >
+									 		<i class="fa-solid fa-pen-to-square"></i>
+								 		</span>
+									 	<span class="reply-delete-button badge bg-danger" 
+									 		data-reply-id="\${list[i].id }">
+									 		<i class="fa-solid fa-trash-can"></i>
+									 	</span>
+									</div>
+							 		"\${list[i].content }"
+								 	
+								 	
+								</div>
+								
+								<div id="replyEditFormContainer\${list[i].id }" 
+									style="display: none;">
+									<form action="${appRoot }/reply/modify" method="post">
+										<div class="input-group">
+											<input type="hidden" name="boardId" value="${board.id }" />
+											<input type="hidden" name="id" value="\${list[i].id }" />
+											<input class="form-control" value="\${list[i].content }" type="text" name="content" required /> 
+											<button data-reply-id="\${list[i].id}" 
+												class="reply-modify-submit btn btn-outline-secondary">
+												<i class="fa-solid fa-comment-dots"></i>
+											</button>
+										</div>
+									</form>
+								</div>
+								`);
+						
+						replyListElement.append(replyElement);	
+						
+						} // end of for
+						
+						$(".reply-modify-submit").click(function (e){
+							e.preventDefault();
+							
+							const id = $(this).attr("data-reply-id");
+							const formElem = $("#replyEditFormContainer" + id).find("form");
+							//const data = formElem.serialize();
+							
+							const data = {
+									boardId : formElem.find("[name=boardId]").val(),
+									id : forElem.find("[name=id]").val(),
+									content : forElem.find("[name=content]").val()
+							};
+							
+							$.ajax({
+								url : "${appRoot}/reply/modify",
+								type : "put",
+								data : JSON.stringify(data),
+								contentType : "application/json",
+								success : function(data){
+									console.log("수정 성공");
+									$("#replyMessage1").show().text(data).fadeOut(3000);
+									
+									// 댓글 refresh
+									listReply();
+								},
+								error : function(){
+									console.log("수정 실패");
+								},
+								complete : function(){
+									console.log("수정 종료");
+								}
+							})
+						});
+						// reply-edit-toggle 버튼 클릭시 댓글 보여주는 div 숨기고,
+						// 수정 form 보여주기
+						$(".reply-edit-toggle-button").click(function() {
+						console.log("버튼클릭");
+						const replyId = $(this).attr("data-reply-id");
+						const displayDivId = "#replyDisplayContainer" + replyId;
+						const editFormId = "#replyEditFormContainer" + replyId;
+						
+						console.log(replyId);
+						console.log(displayDivId);
+						console.log(editFormId);
+						
+						$(displayDivId).hide();
+						$(editFormId).show();
+					});
+					
+					
+						// 삭제 버튼 클릭 이벤트 메소드 등록
+						// reply-delete-button 클릭시
+						$(".reply-delete-button").click(function() {
+							const replyId = $(this).attr("data-reply-id");
+							const message = "댓글을 삭제하시겠습니까?";
+							
+							if (confirm(message)) {
+							//	$("#replyDeleteInput1").val(replyId);
+							//	$("#replyDeleteForm1").submit();
+							
+								$.ajax({
+									url : "${appRoot}/reply/delete/"+replyId,
+									type : "delete",
+									success : function(data){
+										console.log(replyId + "댓글 삭제됨");
+										// 댓글 list refresh
+										listReply();
+										//메세지 출력
+										$("#replyMessage1").show().text(data).fadeOut(3000);
+									},
+									error : function(){
+										console.log(replyId + "댓글 삭제중 문제가 발생");
+									},
+									complete : function(){
+										console.log(replyId + "댓글 삭제됨");
+									}
+								});
+							}
+						});
+					},
+				error : function() {
+					console.log("댓글 가져오기 실패");
+				}
+			});		
+		}
 		
-		// reply-edit-toggle 버튼 클릭시 댓글 보여주는 div 숨기고,
-		// 수정 form 보여주기
-		$(".reply-edit-toggle-button").click(function() {
-			console.log("버튼클릭");
-			const replyId = $(this).attr("data-reply-id");
-			const displayDivId = "#replyDisplayContainer" + replyId;
-			const editFormId = "#replyEditFormContainer" + replyId;
+		//댓글 가져오는 함수
+		listReply();
+		// addReplySubmitButton1 버튼 클릭시 ajax 댓글 추가 요청
+		$("#addReplySubmitButton1").click(function(e){
 			
-			console.log(replyId);
-			console.log(displayDivId);
-			console.log(editFormId);
+			e.preventDefault();
+			const data = $("#insertReplyForm1").serialize();
 			
-			$(displayDivId).hide();
-			$(editFormId).show();
+			$.ajax({
+				url : "${appRoot }/reply/insert",
+				type : "post",
+				data : data,
+				success : function(data){
+					$("#replyMessage1").show().text(data).fadeOut(3000);
+					
+					$("#insertReplyContentInput1").val("");
+					
+					listReply();
+					//console.log(data);
+				},
+				error : function() {
+					console.log("문제 발생");
+				},
+				complete : function() {
+					console.log("요청 완료");
+				}
+			});
+			
 		});
 		
-		// reply-delete-button 클릭시
-		$(".reply-delete-button").click(function() {
-			const replyId = $(this).attr("data-reply-id");
-			const message = "댓글을 삭제하시겠습니까?";
-			
-			if (confirm(message)) {
-				$("#replyDeleteInput1").val(replyId);
-				$("#replyDeleteForm1").submit();
-			}
-		});
 	});
 </script>
 
@@ -140,9 +287,10 @@
 	<div class="container mt-3">
 		<div class="row">
 			<div class="col">
-				<h3>댓글 ${board.numOfReply } 개</h3>
+				<h3>댓글 <span id="numOfReply1"></span> 개</h3>
 			
-				<ul class="list-group">
+				<ul id="replyList1" class="list-group">
+				<%-- 
 					<c:forEach items="${replyList }" var="reply">
 						<li class="list-group-item">
 							<div id="replyDisplayContainer${reply.id }">
@@ -175,6 +323,7 @@
 						 	
 						</li>
 					</c:forEach>
+					--%>
 				</ul>
 			</div>
 		</div>

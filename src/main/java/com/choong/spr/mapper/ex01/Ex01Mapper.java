@@ -9,6 +9,8 @@ public interface Ex01Mapper {
 	List<Products> selectProducts(List<Integer> category);
 
 	List<Category> selectCategory();
+
+	List<Products> selectProductsMoreThen(String price);
 	
 	
 }
