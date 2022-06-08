@@ -99,6 +99,12 @@ public class MemberController {
 		public String removeMember(MemberDto dto, RedirectAttributes rttr) {
 			boolean success = service.removeMember(dto);
 			
+		
+			
+			
+			
+			
+			
 			if (success) {
 				rttr.addFlashAttribute("message", "회원 탈퇴 되었습니다.");
 				return "redirect:/board/list";
@@ -123,4 +129,22 @@ public class MemberController {
 			rttr.addAttribute("id",dto.getId()); // query string
 			return "redirect:/member/get";
 		}
+		
+		@GetMapping("login")
+		public void loginPage() {
+			
+		}
+		
+		@GetMapping("initpw")
+		public void initpwPage() {
+			
+		}
+		
+		@PostMapping("initpw")
+		public String initpwProcess(String id) {
+			service.initPassword(id);
+			
+			return "redirect:/board/list";
+		}
+		
 }

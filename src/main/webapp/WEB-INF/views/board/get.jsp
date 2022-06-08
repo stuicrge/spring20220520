@@ -1,7 +1,10 @@
+
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib prefix="my" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="sec"
+	uri="http://www.springframework.org/security/tags"%>
+<%@ taglib prefix="my" tagdir="/WEB-INF/tags"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,7 +20,10 @@
 <script
 	src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
 	referrerpolicy="no-referrer"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+	integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+	crossorigin="anonymous"></script>
 <script>
 	$(document).ready(function() {
 		$("#edit-button1").click(function() {
@@ -25,6 +31,8 @@
 			$("#textarea1").removeAttr("readonly");
 			$("#modify-submit1").removeClass("d-none");
 			$("#delete-submit1").removeClass("d-none");
+			$("#addFileInputContainer1").removeClass("d-none");
+			$(".removeFileCheckbox").removeClass("d-none");
 		});
 		
 		$("#delete-submit1").click(function(e) {
@@ -62,18 +70,19 @@
 									<div class="fw-bold">
 										<i class="fa-solid fa-comment"></i> 
 										\${list[i].prettyInserted}
-									 	<span class="reply-edit-toggle-button badge bg-info text-dark" 
-									 		id="replyEditToggleButton\${list[i].id }" 
-									 		data-reply-id="\${list[i].id }" >
-									 		<i class="fa-solid fa-pen-to-square"></i>
-								 		</span>
-									 	<span class="reply-delete-button badge bg-danger" 
-									 		data-reply-id="\${list[i].id }">
-									 		<i class="fa-solid fa-trash-can"></i>
-									 	</span>
+										
+										<span id="modifyButtonWrapper\${list[i].id }">
+										</span>
+										
+
+									 	
+									 	
 									</div>
-							 		"\${list[i].content }"
-								 	
+							 		<span class="badge bg-light text-dark">
+							 			<i class="fa-solid fa-user"></i>
+							 			\${list[i].writerNickName}
+							 		</span>
+								 	<span id="replyContent\${list[i].id}"}</span>
 								 	
 								</div>
 								
@@ -94,6 +103,23 @@
 								`);
 						
 						replyListElement.append(replyElement);	
+						$("#replyContent"+list[i].id).text(list[i].content);
+						
+						
+							//own이 true일 때만 수정,삭제 버튼 보이기
+							if(list[i].own){
+								$("#modifyButtonWrapper" + list[i].id).html(`
+									 	<span class="reply-edit-toggle-button badge bg-info text-dark" 
+									 		id="replyEditToggleButton\${list[i].id }" 
+									 		data-reply-id="\${list[i].id }" >
+									 		<i class="fa-solid fa-pen-to-square"></i>
+								 		</span>
+									 	<span class="reply-delete-button badge bg-danger" 
+									 		data-reply-id="\${list[i].id }">
+									 		<i class="fa-solid fa-trash-can"></i>
+									 	</span>					
+										`);
+							}
 						
 						} // end of for
 						
@@ -106,8 +132,8 @@
 							
 							const data = {
 									boardId : formElem.find("[name=boardId]").val(),
-									id : forElem.find("[name=id]").val(),
-									content : forElem.find("[name=content]").val()
+									id : formElem.find("[name=id]").val(),
+									content : formElem.find("[name=content]").val()
 							};
 							
 							$.ajax({
@@ -168,6 +194,7 @@
 										$("#replyMessage1").show().text(data).fadeOut(3000);
 									},
 									error : function(){
+										$("#replyMessage1").show().text("댓글을 삭제할 수 없습니다");
 										console.log(replyId + "댓글 삭제중 문제가 발생");
 									},
 									complete : function(){
@@ -224,25 +251,34 @@
 	<div class="container">
 		<div class="row">
 			<div class="col">
-				<h1>글 본문 
-					<button id="edit-button1" class="btn btn-secondary">
-						<i class="fa-solid fa-pen-to-square"></i>
-					</button>
+				<h1>
+					글 본문
+					<sec:authorize access="isAuthenticated()">
+						<sec:authentication property="principal" var="principal" />
+						<!-- 
+				${principal.username}
+				$(board.memberId}
+				 -->
+
+						<c:if test="${principal.username == board.memberId }">
+							<button id="edit-button1" class="btn btn-secondary">
+								<i class="fa-solid fa-pen-to-square"></i>
+							</button>
+						</c:if>
+					</sec:authorize>
 				</h1>
-				
+
 				<c:if test="${not empty message }">
-					<div class="alert alert-primary">
-						${message }
-					</div>
+					<div class="alert alert-primary">${message }</div>
 				</c:if>
-				
-				<form id="form1" action="${appRoot }/board/modify" method="post">
-					<input type="hidden" name="id" value="${board.id }"/>
-					
+
+				<form id="form1" action="${appRoot }/board/modify" method="post" enctype="multipart/form-data">
+					<input type="hidden" name="id" value="${board.id }" />
+
 					<div>
-						<label class="form-label" for="input1">제목</label>
-						<input class="form-control" type="text" name="title" required
-							id="input1" value="${board.title }" readonly/>
+						<label class="form-label" for="input1">제목</label> <input
+							class="form-control" type="text" name="title" required
+							id="input1" value="${board.title }" readonly />
 					</div>
 
 					<div>
@@ -251,46 +287,89 @@
 							cols="30" rows="10" readonly>${board.body }</textarea>
 					</div>
 					
+					<c:forEach items="${board.fileName }" var="file">
+						<%
+						String file = (String) pageContext.getAttribute("file");
+						String encodedFileName = java.net.URLEncoder.encode(file, "utf-8");
+						pageContext.setAttribute("encodedFileName",encodedFileName);
+						%>
+					<div class="row">
+					<div class="col-1">
+						<div class="d-none removeFileCheckbox">
+							삭제 <br />		
+							<input type="checkbox" name="removeFileList" value="${file }"/>
+						</div>
+					</div>
+					<div class="col-11">
 					<div>
-						<label for="input2" class="form-label">작성일시</label>
-						<input class="form-control" type="datetime-local" value="${board.inserted }" readonly/>
-					</div> 
+						<img class="img-fluid" src="${imageUrl }/board/${board.id }/${encodedFileName }" alt="" />
+					</div>
+					</div>
+					</div>
+					</c:forEach>
+					<div id="addFileInputContainer1" class="d-none">
+						파일 추가:
+						<input type="file"  accept="image/*" multiple="multiple" name="addFileList" />						
+					</div>
 					
+					
+					<div>
+						<label for="input3" class="form-label">작성자</label> <input
+							id="input 3" class="form-control" type="text"
+							value="${board.writerNickName}" readonly />
+					</div>
+
+					<div>
+						<label for="input2" class="form-label">작성일시</label> <input
+							class="form-control" type="datetime-local"
+							value="${board.inserted }" readonly />
+					</div>
+
 					<button id="modify-submit1" class="btn btn-primary d-none">수정</button>
 					<button id="delete-submit1" class="btn btn-danger d-none">삭제</button>
 				</form>
-					
+
 			</div>
 		</div>
 	</div>
-	
-	
+
+
 	<%-- 댓글 추가 form --%>
 	<!-- .container.mt-3>.row>.col>form -->
 	<div class="container mt-3">
 		<div class="row">
 			<div class="col">
-				<form action="${appRoot }/reply/insert" method="post">
+				<form id="insertReplyForm1">
 					<div class="input-group">
-						<input type="hidden" name="boardId" value="${board.id }" />
-						<input class="form-control" type="text" name="content" required /> 
-						<button class="btn btn-outline-secondary"><i class="fa-solid fa-comment-dots"></i></button>
+						<input type="hidden" name="boardId" value="${board.id }" /> <input
+							id="insertReplyContentInput1" class="form-control" type="text"
+							name="content" required />
+						<button id="addReplySubmitButton1"
+							class="btn btn-outline-secondary">
+							<i class="fa-solid fa-comment-dots"></i>
+						</button>
 					</div>
 				</form>
 			</div>
 		</div>
+		<div class="row">
+			<div class="alert alert-primary" style="display: none;"
+				id="replyMessage1"></div>
+		</div>
 	</div>
-	
+
 	<%-- 댓글 목록 --%>
-	
+
 	<!-- .container.mt-3>.row>.col -->
 	<div class="container mt-3">
 		<div class="row">
 			<div class="col">
-				<h3>댓글 <span id="numOfReply1"></span> 개</h3>
-			
+				<h3>
+					댓글 <span id="numOfReply1"></span> 개
+				</h3>
+
 				<ul id="replyList1" class="list-group">
-				<%-- 
+					<%-- 
 					<c:forEach items="${replyList }" var="reply">
 						<li class="list-group-item">
 							<div id="replyDisplayContainer${reply.id }">
@@ -328,12 +407,13 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<%-- reply 삭제 form --%>
 	<div class="d-none">
-		<form id="replyDeleteForm1" action="${appRoot }/reply/delete" method="post">
-			<input id="replyDeleteInput1" type="text" name="id" />
-			<input type="text" name="boardId" value="${board.id }" />
+		<form id="replyDeleteForm1" action="${appRoot }/reply/delete"
+			method="post">
+			<input id="replyDeleteInput1" type="text" name="id" /> <input
+				type="text" name="boardId" value="${board.id }" />
 		</form>
 	</div>
 </body>

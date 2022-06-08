@@ -5,9 +5,13 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.choong.spr.domain.BoardDto;
 import com.choong.spr.domain.MemberDto;
+import com.choong.spr.mapper.BoardMapper;
 import com.choong.spr.mapper.Membermapper;
+import com.choong.spr.mapper.ReplyMapper;
 
 @Service
 public class MemberService {
@@ -18,12 +22,23 @@ public class MemberService {
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
 	
+	@Autowired
+	private ReplyMapper replyMapper;
+	
+	@Autowired
+	private BoardMapper boardMapper;
+	
 	public boolean addMember(MemberDto member) {
 		
 		//평문암호(password)를 암호화
 		String	encodedPassword = passwordEncoder.encode(member.getPassword());
+		
 		member.setPassword(encodedPassword);
-		return mapper.insertMember(member)==1;
+		
+		int cnt1=mapper.insertMember(member);
+		int cnt2=mapper.insertAuth(member.getId(),"ROLE_USER");
+		
+		return cnt1 == 1 && cnt2==1;
 	}
 
 	public boolean hasMemberId(String id) {
@@ -51,6 +66,7 @@ public class MemberService {
 		return mapper.selectMemberById(id);
 	}
 
+	@Transactional
 	public boolean removeMember(MemberDto dto) {
 		MemberDto member = mapper.selectMemberById(dto.getId());
 		
@@ -59,7 +75,23 @@ public class MemberService {
 		String encodedPW = member.getPassword();
 		
 		if (passwordEncoder.matches(rawPW,encodedPW)) {
-			return mapper.deleteMemberById(dto.getId()) == 1;
+			
+			replyMapper.deleteByMemberId(dto.getId());
+			
+			List<BoardDto> boardList = boardMapper.listByMemberId(dto.getId());
+			for(BoardDto board : boardList) {
+				
+				replyMapper.deleteByBoardId(board.getId());
+			}
+			
+			boardMapper.deleteByMemberId(dto.getId());
+			
+			
+			 mapper.deleteAuthById(dto.getId());
+			
+			int cnt2 = mapper.deleteMemberById(dto.getId());
+			
+			return cnt2 == 1;
 		}
 		
 		return false;
@@ -76,6 +108,14 @@ public class MemberService {
 			return mapper.updateMember(dto)==1;
 		}
 		return false;
+	}
+
+	public void initPassword(String id) {
+		// TODO Auto-generated method stub
+		
+		String pw = passwordEncoder.encode(id);
+		
+		mapper.updatePasswordById(id,pw);
 	}
 
 }

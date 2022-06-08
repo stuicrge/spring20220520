@@ -32,6 +32,7 @@
 						<tr>
 							<th><i class="fa-solid fa-hashtag"></i></th>
 							<th>제목</th>
+							<th>작성자</th>
 							<th><i class="fa-solid fa-calendar"></i></th>
 						</tr>
 					</thead>
@@ -49,6 +50,13 @@
 										<c:out value="${board.title }" />
 									</a>
 									
+									<!-- 이미지가 몇장 첨부되었는지 -->
+									<c:if test="${board.hasFile }">
+										<span class="badge rounded-pill bg-light text-dark">
+											<i class="fa-solid fa-file"></i>
+										</span>
+									</c:if>
+									
 									<c:if test="${board.numOfReply > 0 }">
 										<span class="badge rounded-pill bg-light text-dark">
 											<i class="fa-solid fa-comment-dots"></i>
@@ -57,6 +65,7 @@
 									</c:if>
 									
 								</td>
+								<td>${board.writerNickName }</td>
 								<td>${board.prettyInserted }</td>
 							</tr>
 						</c:forEach>

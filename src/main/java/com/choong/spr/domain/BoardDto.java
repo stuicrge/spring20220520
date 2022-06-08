@@ -1,6 +1,7 @@
 package com.choong.spr.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.Data;
 
@@ -11,8 +12,13 @@ public class BoardDto {
 	private String title;
 	private String body;
 	private LocalDateTime inserted;
+	private String memberId;
+	private String writerNickName;
 	private int numOfReply;
-
+	private List<String> fileName;
+	private boolean hasFile;
+	
+	
 	public String getPrettyInserted() {
 		// 24시간 이내면 시간만
 		// 이전이면 년-월-일
